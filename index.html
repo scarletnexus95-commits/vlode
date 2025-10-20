@@ -1,0 +1,620 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Secure Video Storage</title>
+    <style>
+        :root {
+            --primary-color: #2c3e50;
+            --secondary-color: #3498db;
+            --accent-color: #e74c3c;
+            --light-color: #ecf0f1;
+            --dark-color: #2c3e50;
+            --success-color: #2ecc71;
+            --warning-color: #f39c12;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background-color: var(--light-color);
+            color: var(--dark-color);
+            line-height: 1.6;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        header {
+            background-color: var(--primary-color);
+            color: white;
+            padding: 1rem;
+            border-radius: 5px;
+            margin-bottom: 2rem;
+            text-align: center;
+        }
+        
+        .auth-container, .video-container, .admin-container {
+            background-color: white;
+            border-radius: 8px;
+            padding: 2rem;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            margin-bottom: 2rem;
+        }
+        
+        .hidden {
+            display: none;
+        }
+        
+        h1, h2, h3 {
+            margin-bottom: 1rem;
+        }
+        
+        input, button, select {
+            padding: 10px;
+            margin: 5px 0;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            width: 100%;
+        }
+        
+        button {
+            background-color: var(--secondary-color);
+            color: white;
+            border: none;
+            cursor: pointer;
+            font-weight: bold;
+            transition: background-color 0.3s;
+        }
+        
+        button:hover {
+            background-color: #2980b9;
+        }
+        
+        button.danger {
+            background-color: var(--accent-color);
+        }
+        
+        button.danger:hover {
+            background-color: #c0392b;
+        }
+        
+        .video-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+        
+        .video-card {
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            overflow: hidden;
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+        
+        .video-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+        }
+        
+        video {
+            width: 100%;
+            height: auto;
+            display: block;
+        }
+        
+        .video-info {
+            padding: 15px;
+        }
+        
+        .admin-panel {
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 1px solid #eee;
+        }
+        
+        .form-group {
+            margin-bottom: 15px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        
+        .message {
+            padding: 10px;
+            border-radius: 4px;
+            margin: 10px 0;
+        }
+        
+        .success {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        
+        .error {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        
+        .logout-btn {
+            background-color: var(--accent-color);
+            width: auto;
+            padding: 8px 15px;
+            margin-top: 20px;
+        }
+        
+        .tab-container {
+            display: flex;
+            margin-bottom: 20px;
+            border-bottom: 1px solid #ddd;
+        }
+        
+        .tab {
+            padding: 10px 20px;
+            cursor: pointer;
+            border-bottom: 3px solid transparent;
+        }
+        
+        .tab.active {
+            border-bottom: 3px solid var(--secondary-color);
+            font-weight: bold;
+        }
+        
+        .tab-content {
+            display: none;
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Secure Video Storage</h1>
+            <p>Access your videos with password protection</p>
+        </header>
+        
+        <!-- Authentication Section -->
+        <div class="auth-container" id="authContainer">
+            <h2>Enter Password</h2>
+            <div class="form-group">
+                <label for="passwordInput">Password:</label>
+                <input type="password" id="passwordInput" placeholder="Enter your password">
+            </div>
+            <button id="loginBtn">Access Videos</button>
+            <div id="authMessage" class="message hidden"></div>
+        </div>
+        
+        <!-- Video Gallery Section -->
+        <div class="video-container hidden" id="videoContainer">
+            <h2>Video Gallery</h2>
+            <div class="video-grid" id="videoGrid">
+                <!-- Videos will be dynamically added here -->
+            </div>
+            <button class="logout-btn" id="logoutBtn">Logout</button>
+        </div>
+        
+        <!-- Admin Section -->
+        <div class="admin-container hidden" id="adminContainer">
+            <h2>Admin Panel</h2>
+            
+            <div class="tab-container">
+                <div class="tab active" data-tab="videos">Manage Videos</div>
+                <div class="tab" data-tab="passwords">Manage Passwords</div>
+                <div class="tab" data-tab="settings">Settings</div>
+            </div>
+            
+            <!-- Videos Tab -->
+            <div class="tab-content active" id="videosTab">
+                <h3>Add New Video</h3>
+                <div class="form-group">
+                    <label for="videoTitle">Video Title:</label>
+                    <input type="text" id="videoTitle" placeholder="Enter video title">
+                </div>
+                <div class="form-group">
+                    <label for="videoUrl">GitHub Video URL:</label>
+                    <input type="text" id="videoUrl" placeholder="Enter GitHub raw video URL">
+                </div>
+                <button id="addVideoBtn">Add Video</button>
+                
+                <h3>Existing Videos</h3>
+                <div id="adminVideoList">
+                    <!-- Admin video list will be populated here -->
+                </div>
+            </div>
+            
+            <!-- Passwords Tab -->
+            <div class="tab-content" id="passwordsTab">
+                <h3>Change Admin Password</h3>
+                <div class="form-group">
+                    <label for="newAdminPassword">New Admin Password:</label>
+                    <input type="password" id="newAdminPassword" placeholder="Enter new admin password">
+                </div>
+                <button id="changeAdminPasswordBtn">Change Admin Password</button>
+                
+                <h3>Manage User Passwords</h3>
+                <div class="form-group">
+                    <label for="newUserPassword">Add New User Password:</label>
+                    <input type="password" id="newUserPassword" placeholder="Enter new user password">
+                </div>
+                <button id="addUserPasswordBtn">Add User Password</button>
+                
+                <h4>Current User Passwords</h4>
+                <div id="userPasswordList">
+                    <!-- User passwords will be listed here -->
+                </div>
+            </div>
+            
+            <!-- Settings Tab -->
+            <div class="tab-content" id="settingsTab">
+                <h3>Reset System</h3>
+                <p>This will reset all data including videos and passwords.</p>
+                <button class="danger" id="resetSystemBtn">Reset System</button>
+            </div>
+            
+            <div id="adminMessage" class="message hidden"></div>
+            <button class="logout-btn" id="adminLogoutBtn">Logout</button>
+        </div>
+    </div>
+
+    <script>
+        // Initialize data structure
+        let appData = {
+            videos: [],
+            userPasswords: ['user123'], // Default user password
+            adminPassword: 'admin123'   // Default admin password
+        };
+
+        // DOM Elements
+        const authContainer = document.getElementById('authContainer');
+        const videoContainer = document.getElementById('videoContainer');
+        const adminContainer = document.getElementById('adminContainer');
+        const passwordInput = document.getElementById('passwordInput');
+        const loginBtn = document.getElementById('loginBtn');
+        const logoutBtn = document.getElementById('logoutBtn');
+        const adminLogoutBtn = document.getElementById('adminLogoutBtn');
+        const authMessage = document.getElementById('authMessage');
+        const videoGrid = document.getElementById('videoGrid');
+        const adminVideoList = document.getElementById('adminVideoList');
+        const userPasswordList = document.getElementById('userPasswordList');
+        const adminMessage = document.getElementById('adminMessage');
+        
+        // Admin form elements
+        const videoTitle = document.getElementById('videoTitle');
+        const videoUrl = document.getElementById('videoUrl');
+        const addVideoBtn = document.getElementById('addVideoBtn');
+        const newAdminPassword = document.getElementById('newAdminPassword');
+        const changeAdminPasswordBtn = document.getElementById('changeAdminPasswordBtn');
+        const newUserPassword = document.getElementById('newUserPassword');
+        const addUserPasswordBtn = document.getElementById('addUserPasswordBtn');
+        const resetSystemBtn = document.getElementById('resetSystemBtn');
+        
+        // Tab functionality
+        const tabs = document.querySelectorAll('.tab');
+        const tabContents = document.querySelectorAll('.tab-content');
+        
+        tabs.forEach(tab => {
+            tab.addEventListener('click', () => {
+                // Remove active class from all tabs and contents
+                tabs.forEach(t => t.classList.remove('active'));
+                tabContents.forEach(c => c.classList.remove('active'));
+                
+                // Add active class to clicked tab and corresponding content
+                tab.classList.add('active');
+                const tabId = tab.getAttribute('data-tab') + 'Tab';
+                document.getElementById(tabId).classList.add('active');
+            });
+        });
+
+        // Load data from localStorage on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            const savedData = localStorage.getItem('videoStorageApp');
+            if (savedData) {
+                appData = JSON.parse(savedData);
+            } else {
+                // Add some sample videos if no data exists
+                appData.videos = [
+                    {
+                        id: 1,
+                        title: 'Sample Video 1',
+                        url: 'https://raw.githubusercontent.com/facebook/react/main/README.md' // Replace with actual video URL
+                    },
+                    {
+                        id: 2,
+                        title: 'Sample Video 2',
+                        url: 'https://raw.githubusercontent.com/vuejs/vue/main/README.md' // Replace with actual video URL
+                    }
+                ];
+                saveData();
+            }
+            
+            // Check if user is already logged in
+            const currentUser = sessionStorage.getItem('currentUser');
+            if (currentUser) {
+                if (currentUser === 'admin') {
+                    showAdminPanel();
+                } else {
+                    showVideoGallery();
+                }
+            }
+        });
+
+        // Save data to localStorage
+        function saveData() {
+            localStorage.setItem('videoStorageApp', JSON.stringify(appData));
+        }
+
+        // Authentication
+        loginBtn.addEventListener('click', () => {
+            const password = passwordInput.value.trim();
+            
+            if (!password) {
+                showMessage(authMessage, 'Please enter a password', 'error');
+                return;
+            }
+            
+            if (password === appData.adminPassword) {
+                sessionStorage.setItem('currentUser', 'admin');
+                showAdminPanel();
+            } else if (appData.userPasswords.includes(password)) {
+                sessionStorage.setItem('currentUser', 'user');
+                showVideoGallery();
+            } else {
+                showMessage(authMessage, 'Invalid password', 'error');
+            }
+        });
+
+        // Logout functionality
+        logoutBtn.addEventListener('click', logout);
+        adminLogoutBtn.addEventListener('click', logout);
+
+        function logout() {
+            sessionStorage.removeItem('currentUser');
+            authContainer.classList.remove('hidden');
+            videoContainer.classList.add('hidden');
+            adminContainer.classList.add('hidden');
+            passwordInput.value = '';
+        }
+
+        // Show video gallery
+        function showVideoGallery() {
+            authContainer.classList.add('hidden');
+            videoContainer.classList.remove('hidden');
+            adminContainer.classList.add('hidden');
+            renderVideos();
+        }
+
+        // Show admin panel
+        function showAdminPanel() {
+            authContainer.classList.add('hidden');
+            videoContainer.classList.add('hidden');
+            adminContainer.classList.remove('hidden');
+            renderAdminVideos();
+            renderUserPasswords();
+        }
+
+        // Render videos in gallery
+        function renderVideos() {
+            videoGrid.innerHTML = '';
+            
+            if (appData.videos.length === 0) {
+                videoGrid.innerHTML = '<p>No videos available.</p>';
+                return;
+            }
+            
+            appData.videos.forEach(video => {
+                const videoCard = document.createElement('div');
+                videoCard.className = 'video-card';
+                
+                // Note: GitHub raw URLs for videos need to be direct links to the video file
+                // For demo purposes, we're using README files, but in practice these should be actual video URLs
+                videoCard.innerHTML = `
+                    <video controls>
+                        <source src="${video.url}" type="video/mp4">
+                        Your browser does not support the video tag.
+                    </video>
+                    <div class="video-info">
+                        <h3>${video.title}</h3>
+                    </div>
+                `;
+                
+                videoGrid.appendChild(videoCard);
+            });
+        }
+
+        // Render videos in admin panel
+        function renderAdminVideos() {
+            adminVideoList.innerHTML = '';
+            
+            if (appData.videos.length === 0) {
+                adminVideoList.innerHTML = '<p>No videos available.</p>';
+                return;
+            }
+            
+            appData.videos.forEach(video => {
+                const videoItem = document.createElement('div');
+                videoItem.className = 'video-item';
+                videoItem.innerHTML = `
+                    <div style="display: flex; justify-content: space-between; align-items: center; padding: 10px; border-bottom: 1px solid #eee;">
+                        <div>
+                            <strong>${video.title}</strong>
+                            <br>
+                            <small>${video.url}</small>
+                        </div>
+                        <button class="danger" data-id="${video.id}">Remove</button>
+                    </div>
+                `;
+                
+                adminVideoList.appendChild(videoItem);
+            });
+            
+            // Add event listeners to remove buttons
+            document.querySelectorAll('#adminVideoList .danger').forEach(button => {
+                button.addEventListener('click', (e) => {
+                    const videoId = parseInt(e.target.getAttribute('data-id'));
+                    removeVideo(videoId);
+                });
+            });
+        }
+
+        // Render user passwords in admin panel
+        function renderUserPasswords() {
+            userPasswordList.innerHTML = '';
+            
+            if (appData.userPasswords.length === 0) {
+                userPasswordList.innerHTML = '<p>No user passwords set.</p>';
+                return;
+            }
+            
+            appData.userPasswords.forEach((password, index) => {
+                const passwordItem = document.createElement('div');
+                passwordItem.className = 'password-item';
+                passwordItem.innerHTML = `
+                    <div style="display: flex; justify-content: space-between; align-items: center; padding: 10px; border-bottom: 1px solid #eee;">
+                        <div>
+                            <strong>User Password ${index + 1}</strong>
+                            <br>
+                            <small>${'*'.repeat(password.length)}</small>
+                        </div>
+                        <button class="danger" data-index="${index}">Remove</button>
+                    </div>
+                `;
+                
+                userPasswordList.appendChild(passwordItem);
+            });
+            
+            // Add event listeners to remove buttons
+            document.querySelectorAll('#userPasswordList .danger').forEach(button => {
+                button.addEventListener('click', (e) => {
+                    const index = parseInt(e.target.getAttribute('data-index'));
+                    removeUserPassword(index);
+                });
+            });
+        }
+
+        // Admin functions
+        addVideoBtn.addEventListener('click', () => {
+            const title = videoTitle.value.trim();
+            const url = videoUrl.value.trim();
+            
+            if (!title || !url) {
+                showMessage(adminMessage, 'Please fill in all fields', 'error');
+                return;
+            }
+            
+            // Simple URL validation
+            if (!url.startsWith('http')) {
+                showMessage(adminMessage, 'Please enter a valid URL', 'error');
+                return;
+            }
+            
+            const newVideo = {
+                id: Date.now(), // Simple ID generation
+                title,
+                url
+            };
+            
+            appData.videos.push(newVideo);
+            saveData();
+            renderAdminVideos();
+            showMessage(adminMessage, 'Video added successfully', 'success');
+            
+            // Clear form
+            videoTitle.value = '';
+            videoUrl.value = '';
+        });
+
+        function removeVideo(id) {
+            appData.videos = appData.videos.filter(video => video.id !== id);
+            saveData();
+            renderAdminVideos();
+            showMessage(adminMessage, 'Video removed successfully', 'success');
+        }
+
+        changeAdminPasswordBtn.addEventListener('click', () => {
+            const newPassword = newAdminPassword.value.trim();
+            
+            if (!newPassword) {
+                showMessage(adminMessage, 'Please enter a new password', 'error');
+                return;
+            }
+            
+            appData.adminPassword = newPassword;
+            saveData();
+            showMessage(adminMessage, 'Admin password changed successfully', 'success');
+            newAdminPassword.value = '';
+        });
+
+        addUserPasswordBtn.addEventListener('click', () => {
+            const newPassword = newUserPassword.value.trim();
+            
+            if (!newPassword) {
+                showMessage(adminMessage, 'Please enter a new password', 'error');
+                return;
+            }
+            
+            if (appData.userPasswords.includes(newPassword)) {
+                showMessage(adminMessage, 'This password already exists', 'error');
+                return;
+            }
+            
+            appData.userPasswords.push(newPassword);
+            saveData();
+            renderUserPasswords();
+            showMessage(adminMessage, 'User password added successfully', 'success');
+            newUserPassword.value = '';
+        });
+
+        function removeUserPassword(index) {
+            appData.userPasswords.splice(index, 1);
+            saveData();
+            renderUserPasswords();
+            showMessage(adminMessage, 'User password removed successfully', 'success');
+        }
+
+        resetSystemBtn.addEventListener('click', () => {
+            if (confirm('Are you sure you want to reset the system? This will delete all videos and passwords.')) {
+                // Reset to default state
+                appData = {
+                    videos: [],
+                    userPasswords: ['user123'],
+                    adminPassword: 'admin123'
+                };
+                saveData();
+                renderAdminVideos();
+                renderUserPasswords();
+                showMessage(adminMessage, 'System reset successfully', 'success');
+            }
+        });
+
+        // Utility function to show messages
+        function showMessage(element, message, type) {
+            element.textContent = message;
+            element.className = `message ${type}`;
+            element.classList.remove('hidden');
+            
+            // Hide message after 3 seconds
+            setTimeout(() => {
+                element.classList.add('hidden');
+            }, 3000);
+        }
+    </script>
+</body>
+</html>
